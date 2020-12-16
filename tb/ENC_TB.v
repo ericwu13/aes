@@ -28,41 +28,46 @@ AES_encryption AES_TB(key_byte, state_byte,clk,rst,enable,state_out_byte,load,re
 reg startSend;
 
 /*Initializing inputs*/
-initial 
-begin 
- //initialize here 
+initial begin 
+    //initialize here 
 	clk = 0;
 	rst = 0;
-  key_byte = 0;
-  state_byte =0;
+    key_byte = 0;
+    state_byte =0;
 	enable = 0;
 	startSend=0;
 end 
 
 
 /*Monitor values*/
-initial 
-begin 
-  $display ("\t\ttime,\tkey_Byte,\tdata_Byte,\tload,\tready,\tdata_out_byte");
-  $monitor ("%d,\t%b,\t%b,\t%b,\t%b,\t%b",$time,key_byte,state_byte,load,ready,state_out_byte);
+always @(posedge clk) begin 
+  //$display ("\t\ttime,\tkey_Byte,\tdata_Byte,\tload,\tready,\tdata_out_byte");
+    //$monitor ("%d,\t%b,\t%b,\t%b,\t%b,\t%h, \t%d, \t%h, \t%d",$time,key_byte,state_byte,load,ready,state_out_byte, AES_TB.encState, AES_TB.keyExpansionOut, AES_TB.keyNum);
+    $display ("stateIn: %h, keyIn: %h, loadfinish: %d, encState: %d, keyNum: %d, output: %h", 
+        AES_TB.modulesStateIn,
+        AES_TB.modulesKeyIn,
+        AES_TB.loadFinish,
+        AES_TB.encState,
+        AES_TB.keyNum,
+        AES_TB.stateOutput
+    );
+    //$monitor ("%d, state: %b, Key: %x, stateout: %x", $time, AES_TB.encryptionCycleFSM, AES_TB.keyExpansionOut, AES_TB.roundKeyStateOut);
 end
 
 //Generate clock 
-always 
-#1 clk = ~clk;
+always #1 clk = ~clk;
 
 event reset_done;
 /*Generating input values */
-task reset();
-  begin
+task reset(); begin
   @(negedge clk);
     rst = 1;
 	#5
-  @(negedge clk);
-		begin 
+  @(negedge clk); 
+    begin 
 		rst = 0;
 		->reset_done;
-		end
+	end
 	
 	
 
@@ -97,24 +102,21 @@ begin
 */
 	full_key <= 128'h5468617473206D79204B756E67204675;
 	full_state <= 128'h54776F204F6E65204E696E652054776F;
-
-  i <= 127;
+    i <= 127;
 	#1 reset();
 end
 
 initial
 begin 
-  @(reset_done)
-  begin
-	#2;
+    @(reset_done) begin
+	    #2;
 		enable = 1;
-	#2; /*wait one cycle because datsa is recieved in the design after one cycle of the enable signal is set*/
+	    #2; /*wait one cycle because datsa is recieved in the design after one cycle of the enable signal is set*/
 		startSend = 1;
-		@(ready) 
-			begin 
-				#35;
-				$stop;
-			end 
-  end
+		@(ready) begin 
+		    #35;
+			$stop;
+		end 
+    end
 end 
 endmodule
